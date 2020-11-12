@@ -23,11 +23,11 @@ feat_extdict  = pickle.load(open("feature_extractor_dict_cor.pickle", "rb"))
 #load experimental DC values for 20x20 plot
 logDC=pickle.load(open('logDC.pickle','rb'))
 #load trained xgb models
-mod_low  = pickle.load(open("mod_low_xgb_cor.pickle", "rb"))
-mod_high  = pickle.load(open("mod_high_xgb_cor.pickle", "rb"))
+mod_low  = pickle.load(open("npx_mod_low_xgb_cor.pickle", "rb"))
+mod_high  = pickle.load(open("npx_mod_high_xgb_cor.pickle", "rb"))
 
 
-#this function creates featuers for a given query sequence
+#this function creates features for a given query sequence
 def feat_extractor(seqs, ft_dict):
     #seqs: array of sequences to extract features from
     #ft_dict: feature extraction dict
@@ -172,4 +172,4 @@ def update_output(n_clicks,input1):
         return (html.Img(id = 'cur_plot', src = out_url), probs_dt,tab_desc)
 
 if __name__ == '__main__':
-    app.run_server(host='0.0.0.0',debug=False, port=8050)
+    app.run_server(debug=False, port=8050)
