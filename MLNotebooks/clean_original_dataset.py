@@ -1,9 +1,8 @@
 import pandas as pd
-import numpy as np
 
 # The original data set obtained from Jessica via sunil had some errors as well as extra columns that are not required. 
 # This code removes those and saves a new file called 'experimental_data_set.csv' that should be loaded 
-# when conducting future experiments with this data. 
+# when conducting future experiments with this data. If this files already exists, don't run this file.
 
 if __name__ == '__main__':
     dfvz = pd.read_csv("/DataFiles/FullDataSet.csv", engine='c')
