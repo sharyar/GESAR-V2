@@ -6,7 +6,7 @@ import numpy as np
 # when conducting future experiments with this data. 
 
 if __name__ == '__main__':
-    dfvz = pd.read_csv("/home/sharyarmemon/Documents/GitHub/GESAR-V2/DataFiles/FullDataSet.csv", engine='c')
+    dfvz = pd.read_csv("/DataFiles/FullDataSet.csv", engine='c')
     dfvz.loc[dfvz['vhse1.4'] == -0.69,'vhse1.4'] = 0.69
     dfvz.loc[dfvz['vhse2.4'] == -0.69,'vhse2.4'] = 0.69
     dfvz.loc[dfvz['vhse3.4'] == -0.69,'vhse3.4'] = 0.69
