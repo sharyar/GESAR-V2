@@ -3,6 +3,12 @@ import numpy as np
 from sklearn import preprocessing
 import seaborn as sns
 from matplotlib.patches import Rectangle
+from IPython.display import display
+from scipy.stats import hmean
+from sklearn.metrics import precision_recall_curve, confusion_matrix, accuracy_score, roc_auc_score, f1_score, \
+    precision_score, recall_score, average_precision_score
+import matplotlib.pyplot as plt
+
 
 def load_and_filter_dataset(path_dfvz='../DataFiles/experimental_data_set.csv',
                             path_df20='../DataFiles/df20.csv',
@@ -20,11 +26,14 @@ def load_and_filter_dataset(path_dfvz='../DataFiles/experimental_data_set.csv',
 
     dfvz = pd.read_csv(path_dfvz, engine='c', index_col=0)
     df20 = pd.read_csv(path_df20, engine='c', index_col=0)
+    len_before_filter = np.array([len(dfvz), len(df20)])
 
     if apply_filter is not None:
         idx_filtered = filter_data_idx(dfvz, apply_filter)
         dfvz = dfvz.loc[idx_filtered]
         df20 = df20.loc[idx_filtered]
+        len_after_filter = np.array([len(dfvz), len(df20)])
+        print(f'Len Before Filtering for DFVZ and DF20: {len_before_filter}\nLen After Filter: {len_after_filter}')
 
     return dfvz, df20
 
@@ -51,9 +60,9 @@ def filter_data_idx(df, filter_seqs='CPXXX'):
 
     print(f"""
     DF Contains: 
-    Sequences Containing C: {len(filter_cysteine)}
-    Sequences Containing PXXX (Not PPXX): {len(filter_pxxx)}
-    Combine the two above filters with or: {len(filter_c_pxxx)} 
+    Sequences Containing C: {np.count_nonzero(filter_cysteine)}
+    Sequences Containing PXXX (Not PPXX): {np.count_nonzero(filter_pxxx)}
+    Combine the two above filters with or: {np.count_nonzero(filter_c_pxxx)} 
     """)
 
     if filter_seqs.upper() == 'C':
@@ -158,7 +167,7 @@ def ttmatrix(seqs, dc):
         ttmat[ttlocate(s)] = dc[i]
     mask = np.isnan(ttmat)
     return ttmat, mask
-
+import xgboost as xgb
 
 # plot the ttmatrix, and highlight the query if present
 def ttplot(seqs, dc, query=[]):
@@ -191,3 +200,55 @@ def ttplot(seqs, dc, query=[]):
 
     return ax.figure
 
+
+def evalplots(y_test, y_score, y_pred, labels, name_modifier):
+    precision, recall, thr = precision_recall_curve(y_test, y_score)
+    average_precision = average_precision_score(y_test, y_score)
+    f1score = f1_score(y_test, y_pred)
+    f1vec = [hmean([precision[i], recall[i]]) for i in range(sum(recall != 0))]
+
+    # plt.plot([i/len(f1vec) for i in range(len(f1vec))],f1vec,color='r',alpha=0.2)
+    plt.step(recall, precision, color='b', alpha=0.2, where='post')
+    plt.fill_between(recall, precision, step='post', alpha=0.2, color='b')
+
+    plt.xlabel('Recall')
+    plt.ylabel('Precision')
+    plt.ylim([0.0, 1.05])
+    plt.xlim([0.0, 1.0])
+    plt.title('2-class Precision-Recall curve: AP={0:0.2f}, F1={1:0.2f}'.format(average_precision, f1score))
+    plt.tight_layout()
+    plt.savefig(f'figures/precision_recall_{name_modifier}.svg')
+    plt.savefig(f'figures/precision_recall_{name_modifier}.png', dpi=300)
+    plt.show()
+
+
+    plt.step(thr[recall[:-1] != 0], f1vec, color='r', alpha=0.2, where='post')
+    plt.fill_between(thr[recall[:-1] != 0], f1vec, step='post', alpha=0.2, color='r')
+    plt.xlabel('Threshold')
+    plt.ylabel('Estimated F1-Scores')
+    plt.ylim([0.0, 1.0])
+    plt.axvline(x=0.5, color='r')
+    plt.title('Threshold Vs F1-Score: Max F1 ={0:0.2f}, Reported F1={1:0.2f}'.format(np.max(f1vec), f1score))
+    plt.tight_layout()
+    plt.savefig(f'figures/threshold_f1_{name_modifier}.svg')
+    plt.savefig(f'figures/threshold_f1_{name_modifier}.png', dpi=300)
+    plt.show()
+
+
+
+    cm = confusion_matrix(y_test, y_pred, labels)
+    print('Recall: {0:0.2f}'.format(recall_score(y_test, y_pred)))
+    print('Precision: {0:0.2f}'.format(precision_score(y_test, y_pred)))
+    display(pd.DataFrame(cm, columns=['Negative', 'Positive'], index=['Negative', 'Positive']))
+    fig = plt.figure()
+    ax = fig.add_subplot(111)
+    cax = ax.matshow(cm, cmap='hot')
+    print('\n')
+    plt.title('Confusion matrix : Acc={0:0.2f}'.format(accuracy_score(y_test, y_pred)))
+    fig.colorbar(cax)
+    ax.set_xticklabels([''] + labels)
+    ax.set_yticklabels([''] + labels)
+    plt.xlabel('Predicted')
+    plt.ylabel('True')
+    plt.show()
+    print('--------------------------------------------------------')
