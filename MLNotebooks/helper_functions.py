@@ -189,14 +189,14 @@ def ttplot(seqs, dc, query=[]):
     sns.set(rc={'figure.figsize': (9, 6)})
 
     # if dc values are binary then use simple color map
-    cm = 'Blues' if len(np.unique(dc)) == 2 else 'coolwarm'
+    cm = 'Blues' if len(np.unique(dc)) == 2 else 'jet'
     ax = sns.heatmap(ttmat, cmap=cm, xticklabels=ticks, yticklabels=ticks, mask=mask)
     ax.set_title('Position of queried sequence/s in 20x20 plot (log (deep conversion))')
 
     if len(query) > 0:
         for q in query:
             query_pos = ttlocate(q)[1], ttlocate(q)[0]
-            ax.add_patch(Rectangle(query_pos, 1, 1, fill=True, edgecolor='yellow', lw=8))
+            ax.add_patch(Rectangle(query_pos, 1, 1, fill=True, edgecolor='red', lw=8))
 
     return ax.figure
 
