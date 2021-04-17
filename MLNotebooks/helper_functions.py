@@ -167,36 +167,61 @@ def ttmatrix(seqs, dc):
         ttmat[ttlocate(s)] = dc[i]
     mask = np.isnan(ttmat)
     return ttmat, mask
-import xgboost as xgb
+
 
 # plot the ttmatrix, and highlight the query if present
-def ttplot(seqs, dc, query=[]):
-    """Plots a 20x20 Matrix based on provided Sequences and LogDC values. The query is optional and draws a yellow square around the queried sequence
+def ttplot(seqs, 
+           dc, 
+           query=None, 
+           title='Position of queried sequence/s in 20x20 plot (log (deep conversion))',
+           vmin=None,
+           vmax=None):
+    """Plots a 20x20 Matrix based on provided Sequences and LogDC values. The query is optional and draws a yellow
+    square around the queried sequence
 
     Args:
+        vmin:
+        vmax:
+        title:
         seqs ([String]): array of sequences to build the ttplot with
-        dc ([Float]): array of log DC values correspondingdescription to the sequences.
+        dc ([Float]): array of log DC values corresponding description to the sequences.
         query (list, optional): List of query sequences to see where they might show up on the 20x20 Plot. Defaults to [].
 
     Returns:
         [type]: [description]
     """
+    if query is None:
+        query = []
     ttmat, mask = ttmatrix(seqs, dc)
 
     aa = ['R', 'K', 'Q', 'E', 'D', 'N', 'Y', 'P', 'T', 'S', 'H', 'A', 'G', 'W', 'M', 'F', 'L', 'V', 'I', 'C']
     ticks = [[a[0]] + [''] * 19 for a in aa]
     ticks = [j for i in ticks for j in i]
     sns.set(rc={'figure.figsize': (9, 6)})
+    sns.set(font_scale=1.3)
 
     # if dc values are binary then use simple color map
-    cm = 'Blues' if len(np.unique(dc)) == 2 else 'jet'
-    ax = sns.heatmap(ttmat, cmap=cm, xticklabels=ticks, yticklabels=ticks, mask=mask)
-    ax.set_title('Position of queried sequence/s in 20x20 plot (log (deep conversion))')
+    if len(np.unique(dc)) == 2:
+        cm = 'Blues'
+    
+    elif len(np.unique(dc)) == 3:
+        cm = ['#2AB7CA', '#D6D6D6', '#FE4A49']
+    
+    else:
+        cm = 'jet'
+
+#     cm = 'Blues' if len(np.unique(dc)) == 2 else 'jet'
+    # comment out above comment as we have new logic.
+
+    ax = sns.heatmap(ttmat, cmap=cm, xticklabels=ticks, yticklabels=ticks, mask=mask, vmin=vmin, vmax=vmax)
+    ax.set_title(title, pad=20)
+    ax.set(facecolor='#F5F5F5')
 
     if len(query) > 0:
         for q in query:
             query_pos = ttlocate(q)[1], ttlocate(q)[0]
             ax.add_patch(Rectangle(query_pos, 1, 1, fill=True, edgecolor='red', lw=8))
+            
 
     return ax.figure
 
@@ -221,7 +246,6 @@ def evalplots(y_test, y_score, y_pred, labels, name_modifier):
     plt.savefig(f'figures/precision_recall_{name_modifier}.png', dpi=300)
     plt.show()
 
-
     plt.step(thr[recall[:-1] != 0], f1vec, color='r', alpha=0.2, where='post')
     plt.fill_between(thr[recall[:-1] != 0], f1vec, step='post', alpha=0.2, color='r')
     plt.xlabel('Threshold')
@@ -233,8 +257,6 @@ def evalplots(y_test, y_score, y_pred, labels, name_modifier):
     plt.savefig(f'figures/threshold_f1_{name_modifier}.svg')
     plt.savefig(f'figures/threshold_f1_{name_modifier}.png', dpi=300)
     plt.show()
-
-
 
     cm = confusion_matrix(y_test, y_pred, labels)
     print('Recall: {0:0.2f}'.format(recall_score(y_test, y_pred)))
